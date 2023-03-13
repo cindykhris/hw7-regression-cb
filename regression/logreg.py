@@ -129,7 +129,15 @@ class LogisticRegressor(BaseRegressor):
         Returns: 
             The predicted labels (y_pred) for given X.
         """
-        pass
+        # implement logistic function to get estimates (y_pred) for input X values
+        if X.shape[1] != self.W.shape[0]:
+            X = np.hstack([X, np.ones((X.shape[0], 1))])
+
+        y_pred = 1 / (1 + np.exp(-X @ self.W))   # sigmoid function
+        y_pred = np.rint(y_pred)                # round to 0 or 1
+        y_pred = y_pred.astype(int)             # convert to int
+        return y_pred
+
     
     def loss_function(self, y_true, y_pred) -> float:
         """
@@ -143,7 +151,20 @@ class LogisticRegressor(BaseRegressor):
         Returns: 
             The mean loss (a single number).
         """
-        pass
+        y_pred = np.clip(y_pred, 1e-15, 1 - 1e-15)  # clip to avoid log(0)
+
+        # Calculate the loss function in two steps:  predict 0 and predict 1
+       
+        y_pred_zero_loss = -y_true * np.log(y_pred)
+        y_pred_one_loss = -(1 - y_true) * np.log(1 - y_pred)
+
+        # refularize the loss function
+        regularizer = 0.5 * np.sum(self.W ** 2)
+
+        # implement binary cross entropy loss
+        loss = np.mean(y_pred_zero_loss + y_pred_one_loss) + regularizer
+        return loss
+        
         
     def calculate_gradient(self, y_true, X) -> np.ndarray:
         """
@@ -157,4 +178,17 @@ class LogisticRegressor(BaseRegressor):
         Returns: 
             Vector of gradients.
         """
-        pass
+        # Calculate the gradient of the loss function with respect to the given data
+        y_pred = self.make_prediction(X)
+        # number of predictions
+        observations = y_pred.shape[0]
+        # add error to the prediction
+        error = y_pred - y_true
+        # calculate the gradient
+        gradient = np.dot(X.T, error) / observations
+        return gradient
+
+
+
+
+
